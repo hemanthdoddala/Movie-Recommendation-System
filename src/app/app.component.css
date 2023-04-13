@@ -1,0 +1,25 @@
+@import "~slick-carousel/slick/slick-theme.css";
+  
+  .mat-toolbar-row::-webkit-scrollbar, .mat-toolbar-single-row::-webkit-scrollbar {
+    display: none; /* remove scroll bar */
+  }
+
+  .main-heading {
+    font-size: 40px !important;
+    font-weight: 700 !important;
+    margin: 15px;
+  }
+
+  .caption {
+    font-size: 14px;
+    font-weight: 300;
+    margin: 15px;
+  }
+
+  .spacer {
+    flex: 1 1 auto;
+  }
+
+  .active{
+    background-color: #324191;
+  }
