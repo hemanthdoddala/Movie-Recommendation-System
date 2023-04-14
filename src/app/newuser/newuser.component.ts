@@ -1,11 +1,19 @@
-import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { map, Observable, of, startWith } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { debounceTime, Observable, of } from 'rxjs';
+import { MovieService } from '../movie.service';
 
 interface Movie {
   name: string;
   poster: string;
   rating: number;
+}
+
+interface MovieInfo {
+  movie_id: string;
+  poster: string;
+  title: string;
 }
 
 @Component({
@@ -14,91 +22,14 @@ interface Movie {
   styleUrls: ['./newuser.component.css']
 })
 export class NewuserComponent implements OnInit {
-  movies: Movie[] = [
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/9dKCd55IuTT5QRs989m9Qlb7d2B.jpg",
-      "name": "Spider-Man: No Way Home",
-      "rating": 8.4
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/8WUVHemHFH2ZIP6NWkwlHWsyrEL.jpg",
-      "name": "The Matrix Resurrections",
-      "rating": 7.1
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/xbSuFiJbbBWCkyCCKIMfuDCA4yV.jpg",
-      "name": "The King's Man",
-      "rating": 7.5
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/1gTnopPJgauN46CYGobPyZCZQTn.jpg",
-      "name": "Sing 2",
-      "rating": 7.8
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/8j58iEBw9pOXFD2L0nt0ZXeHviB.jpg",
-      "name": "Dune",
-      "rating": 8.1
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/6Y9fl8tD1xtyUrOHV2MkCYTpzgi.jpg",
-      "name": "Don't Look Up",
-      "rating": 7.4
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/3cOnZ3BEptXHoGul3wHO3hJNKR0.jpg",
-      "name": "Encanto",
-      "rating": 8.3
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/1e1tUWInXCVrrwY6ntuNRuwEj7P.jpg",
-      "name": "Venom: Let There Be Carnage",
-      "rating": 6.9
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/xmbU4JTUm8rsdtn7Y3Fcm30GpeT.jpg",
-      "name": "Dune: Part Two",
-      "rating": 0
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/rjkmN1dniUHVYAtwuV3Tji7FsDO.jpg",
-      "name": "Shang-Chi and the Legend of the Ten Rings",
-      "rating": 7.9
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/niw2AKHz6XmwiRMLWaoyAOAti0G.jpg",
-      "name": "Free Guy",
-      "rating": 7.8
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/4q2hz2m8hubgvijz8Ez0T2Os2Yv.jpg",
-      "name": "The Suicide Squad",
-      "rating": 7.9
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/uIXF0sQGXOxQhbaEaKOi2VYlIL0.jpg",
-      "name": "No Time to Die",
-      "rating": 7.5
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/hRMfgGFRAZIlvwVWy8DYJdLTpvN.jpg",
-      "name": "Eternals",
-      "rating": 6.9
-    },
-    {
-      "poster": "https://image.tmdb.org/t/p/w500/5bFK5d3mVTAvBCXi5NPWH0tYjKl.jpg",
-      "name": "Ghostbusters: Afterlife",
-      "rating": 7.9
-    }
-  ];
+  users$ = new Observable<any>();
+  // baseUrl = 'http://18.212.243.69:80';
+  baseUrl = this.movieService.baseUrl;
+  moviesinfo:MovieInfo[];
+  movies: Movie[] = [];
+  movies2: Movie[] = [];
 
-  suggestions:any;
-
-  // options = ['option1', 'option2', 'option3'];
-  // selectedOption:string;
-  // movieName:string;
-  // @ViewChild('cardContainer') cardContainer: ElementRef;
-
+  suggestions: any;
   slideConfig = {
     slidesToShow: 9,
     slidesToScroll: 1,
@@ -138,38 +69,65 @@ export class NewuserComponent implements OnInit {
       }
     ]
   };
-
-  // onSelect($event:any) {
-  //   console.log("")
-  // }
-
-  search(keyword:string) {
-    if(keyword !== '') {
-      this.suggestions = this.movies.filter(s => s.name.toLowerCase().includes(keyword.toLowerCase()));
-    }
-  }
-
-  // recommend() {
-  //   console.log("")
-  // }
-
   form: FormGroup;
   recommendationTypes: string[] = ["Top Rated", "Top Rated By Genre", "Similar Movie"];
   filteredItems: string[] = [];
-  constructor(private fb: FormBuilder) { }
+
+  constructor(
+    private fb: FormBuilder,
+    private http: HttpClient,
+    private movieService:MovieService
+  ) { }
 
   ngOnInit(): void {
     this.form = this.fb.group({
       recommendationtype: ['', Validators.required],
       moviename: ['', Validators.required]
     });
+    this.getSampleMessage();
+    // this.getUsers();
+    this.getMoviesInfo()
+    this.form.get('moviename')?.valueChanges.pipe(
+      debounceTime(1000) // wait 300ms after each keystroke
+    ).subscribe(value => {
+      this.search(value);
+    });
   }
 
-  
+
+  search(keyword: string) {
+    if (keyword !== '') {
+      this.suggestions = this.moviesinfo.filter(s => s.title.toLowerCase().includes(keyword.toLowerCase()));
+    }
+  }
+
 
   onSelect(item: string) {
-    this.form.patchValue({search: item});
+    this.form.patchValue({ search: item });
     this.filteredItems = [];
+  }
+
+  getSampleMessage() {
+    this.http.get(this.baseUrl).subscribe((data: any) => {
+      console.log(data);
+      console.log("sample data above")
+    })
+  }
+
+  getUsers() {
+    this.http.get(this.baseUrl + '/getUsers').subscribe((data: any) => {
+      this.users$ = of(data.users)
+      console.log(data.users);
+    });
+  }
+
+  getMoviesInfo() {
+    this.http.get(this.baseUrl + '/getMoviesInfo').subscribe((data: any) => {
+      this.moviesinfo = data.moviesinfo
+      console.log(data.moviesinfo);
+      this.movies=data.moviesinfo.slice(100,120)
+      this.movies2 = data.moviesinfo.slice(140,160)
+    });
   }
 
 }

@@ -20,12 +20,20 @@ import { SlickCarouselModule } from 'ngx-slick-carousel';
 import { MatOptionModule } from '@angular/material/core';
 import { FlexLayoutModule } from "@angular/flex-layout";
 import { HttpClientModule } from '@angular/common/http';
+import { DashboardComponent } from './dashboard/dashboard.component';
+import {MatGridListModule} from '@angular/material/grid-list';
+import { MovieService } from './movie.service';
+import { NgChartsModule } from 'ng2-charts';
+import { RatingDistributionComponent } from './dashboard/rating-distribution/rating-distribution.component';
+import { NgxApexchartsModule } from 'ngx-apexcharts';
 
 @NgModule({
   declarations: [
     AppComponent,
     NewuserComponent,
-    ExistinguserComponent
+    ExistinguserComponent,
+    DashboardComponent,
+    RatingDistributionComponent
   ],
   imports: [
     BrowserModule,
@@ -46,9 +54,12 @@ import { HttpClientModule } from '@angular/common/http';
     MatOptionModule,
     FlexLayoutModule,
     MatIconModule,
-    HttpClientModule
+    HttpClientModule,
+    MatGridListModule,
+    NgChartsModule,
+    NgxApexchartsModule
   ],
-  providers: [],
+  providers: [MovieService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 })
 export class AppComponent {
   title = 'movie-recommendation-system';
+  showOnlyForAppComponent = true;
 
   constructor(
     private router: Router
@@ -15,7 +16,7 @@ export class AppComponent {
   }
 
   openRepo() {
-    const url = 'https://github.com/hemanthdoddala/MovieRecommendation'
+    const url = 'https://github.com/hemanthdoddala/Movie-Recommendation-System#readme'
     window.open(url, '_blank');
   }
 }
