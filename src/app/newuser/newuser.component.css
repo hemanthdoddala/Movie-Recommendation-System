@@ -7,6 +7,47 @@
     padding-top:10px
   }
 
+@media (max-width: 3560px) {
+  .movie-card {
+    position: relative;
+    width: 175px;
+    height: 60%;
+  }
+}
+
+@media (max-width: 1700px) {
+  .movie-card {
+    position: relative;
+    width: 150px;
+    height: 60%;
+  }
+  .recommend-button {
+    padding-top:10px
+  }
+}
+
+@media (max-width: 1600px) {
+  .movie-card {
+    position: relative;
+    width: 160px;
+    height: 60%;
+  }
+  .recommend-button {
+    padding-top:10px
+  }
+}
+
+@media (max-width: 1500px) {
+  .movie-card {
+    position: relative;
+    width: 155px;
+    height: 60%;
+  }
+  .recommend-button {
+    padding-top:10px
+  }
+}
+
 @media (max-width: 1200px) {
   .movie-card {
     position: relative;

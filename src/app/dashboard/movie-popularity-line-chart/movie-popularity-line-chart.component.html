@@ -1,0 +1,24 @@
+<mat-card class="example-card">
+    <mat-card-header>
+        <div mat-card-avatar class="example-header-image"></div>
+        <mat-card-title>Movie Popularity</mat-card-title>
+        <mat-card-subtitle>View number of ratings over the years for most watched movies</mat-card-subtitle>
+    </mat-card-header>
+    
+    <mat-card-content>
+        <div>
+            <div style="padding: 10px;">
+                <mat-form-field appearance="outline" style="width:100%">
+                    <mat-label>Popular Movies</mat-label>
+                    <mat-select id="movie" [(ngModel)]="selectedMovie"
+                        (ngModelChange)="getMoviePopularity(selectedMovie, 1)" appearance="outline">
+                        <mat-option *ngFor="let movie of movies" [value]="movie.title">{{ movie.title }}</mat-option>
+                    </mat-select>
+                </mat-form-field>
+            </div>
+            <div style="text-align: center;">
+                <div id="movie-line-chart"></div>
+            </div>
+        </div>
+    </mat-card-content>
+</mat-card>

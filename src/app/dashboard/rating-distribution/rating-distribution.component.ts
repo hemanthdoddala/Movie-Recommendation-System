@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import * as ApexCharts from 'apexcharts';
+import { Spinkit } from 'ng-http-loader';
 import { MovieService } from 'src/app/movie.service';
 
 @Component({
@@ -8,15 +9,17 @@ import { MovieService } from 'src/app/movie.service';
   styleUrls: ['./rating-distribution.component.css']
 })
 export class RatingDistributionComponent {
-  constructor(private movieService: MovieService) { }
+  spinnerStyle = Spinkit;
+  constructor(
+    private movieService: MovieService,
+    ) { }
 
   ngOnInit() {
     this.movieService.getRatingDistribution().subscribe((data: any[]) => {
-      console.log("rating distribution component");
-      console.log(data);
       const options = {
         series: [
           {
+            name:"",
             data: data,
           },
         ],
@@ -62,7 +65,7 @@ export class RatingDistributionComponent {
           }
         }
       };
-      const chart = new ApexCharts(document.querySelector("#chart"), options);
+      const chart = new ApexCharts(document.querySelector("#rating-dist"), options);
       chart.render();
     });
   }

@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -26,6 +26,12 @@ import { MovieService } from './movie.service';
 import { NgChartsModule } from 'ng2-charts';
 import { RatingDistributionComponent } from './dashboard/rating-distribution/rating-distribution.component';
 import { NgxApexchartsModule } from 'ngx-apexcharts';
+import { GenreTreemapComponent } from './dashboard/genre-treemap/genre-treemap.component';
+import { MoviePiechartComponent } from './dashboard/movie-piechart/movie-piechart.component';
+import {MatSliderModule} from '@angular/material/slider';
+import { NgHttpLoaderModule } from 'ng-http-loader';
+import { MoviePopularityLineChartComponent } from './dashboard/movie-popularity-line-chart/movie-popularity-line-chart.component';
+
 
 @NgModule({
   declarations: [
@@ -33,7 +39,10 @@ import { NgxApexchartsModule } from 'ngx-apexcharts';
     NewuserComponent,
     ExistinguserComponent,
     DashboardComponent,
-    RatingDistributionComponent
+    RatingDistributionComponent,
+    GenreTreemapComponent,
+    MoviePiechartComponent,
+    MoviePopularityLineChartComponent
   ],
   imports: [
     BrowserModule,
@@ -57,9 +66,13 @@ import { NgxApexchartsModule } from 'ngx-apexcharts';
     HttpClientModule,
     MatGridListModule,
     NgChartsModule,
-    NgxApexchartsModule
+    NgxApexchartsModule,
+    MatSelectModule,
+    MatSliderModule,
+    NgHttpLoaderModule.forRoot(),
   ],
+  exports:[],
   providers: [MovieService],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
 export class AppModule { }

@@ -12,31 +12,33 @@
     <form [formGroup]="form" class="mat-typography">
       <div class="container">
         <div class="row">
-          <div class="col-lg-2 col-md-12 col-sm-12">
-            <mat-form-field appearance="outline" style="width:100%">
-              <mat-label>User ID</mat-label>
-              <input matInput placeholder="443" type="number" formControlName="userid" name="userid" max="630" maxlength="3">
-              <mat-error *ngIf="form.get('userid')?.touched && form.get('userid')?.invalid">  
-                Not a valid userid
-              </mat-error>
-            </mat-form-field>          
-          </div>
           <div class="col-lg-4 col-md-12 col-sm-12">
             <mat-form-field appearance="outline" style="width:100%">
               <mat-label>Recommendation Type</mat-label>
               <mat-select formControlName="recommendationtype" required>
-                <mat-option *ngFor="let recommendationType of recommendationTypes" [value]="recommendationType">{{recommendationType}}</mat-option>
+                <mat-option *ngFor="let recommendationType of recommendationTypes"
+                  [value]="recommendationType">{{recommendationType}}</mat-option>
               </mat-select>
               <mat-error *ngIf="form.get('recommendationtype')?.touched && form.get('recommendationtype')?.invalid">
                 Please select the recommendation type.
               </mat-error>
             </mat-form-field>
           </div>
-          <div class="col-lg-4 col-md-12 col-sm-12">
+          <div class="col-lg-2 col-md-12 col-sm-12" *ngIf="form.get('recommendationtype')?.value === 'Collaborative Filtering' || 
+              form.get('recommendationtype')?.value === 'Collab Filter NN'">
+            <mat-form-field appearance="outline" style="width:100%">
+              <mat-label>User ID</mat-label>
+              <input matInput placeholder="443" type="number" formControlName="userid" name="userid" max="610"
+                maxlength="3">
+              <mat-error *ngIf="form.get('userid')?.touched && form.get('userid')?.invalid">
+                Not a valid userid
+              </mat-error>
+            </mat-form-field>
+          </div>
+          <div class="col-lg-4 col-md-12 col-sm-12" *ngIf="form.get('recommendationtype')?.value === 'Similar Movie'">
             <mat-form-field appearance="outline" style="width:100%">
               <mat-label>Movie Name</mat-label>
-              <input matInput formControlName="moviename" name="movieName" 
-              [matAutocomplete]="auto">
+              <input matInput formControlName="moviename" name="movieName" [matAutocomplete]="auto">
               <!-- (keydown)="search(form.get('moviename')?.value)" -->
               <mat-autocomplete #auto="matAutocomplete">
                 <mat-option *ngFor="let suggestion of suggestions" [value]="suggestion.title">
@@ -48,56 +50,71 @@
               </mat-error>
             </mat-form-field>
           </div>
-          <div class="recommend-button col-lg-2 col-md-12 col-sm-12" >
-            <button mat-raised-button color="primary" [disabled]="form.invalid" style="width:100%;">Recommend</button>
+        </div>
+        <div class="row">
+          <div class="col-lg-4 col-md-5 col-sm-12" style=" text-align: left;">
+            <!-- <mat-form-field style="width:100%"> -->
+            <label>Recommendations</label>
+            <mat-slider style="width:100%" [max]="100" [min]="20" [step]="10" [discrete]="true" [showTickMarks]="false"
+              formControlName="numberofrecommendations" ngDefaultControl>
+              <input matSliderThumb>
+            </mat-slider>
+            <!-- </mat-form-field> -->
+          </div>
+          <div class="recommend-button col-lg-2 col-md-3 col-sm-12"
+            *ngIf="form.get('recommendationtype')?.value !== ''">
+            <button mat-raised-button color="primary" [disabled]="form.invalid" style="width:100%;"
+              (click)="recommendMovies()">Recommend</button>
           </div>
         </div>
       </div>
     </form>
   </div>
   <div class="container-fluid">
-    <h4 class="font-weight-light">Top Recommendations</h4>
+    <h4 class="font-weight-light" *ngIf="recommendations">Recommendations</h4>
     <ngx-slick-carousel #slickModal="slick-carousel" [config]="slideConfig">
-      <div ngxSlickItem *ngFor="let movie of movies" class="slide">
+      <div ngxSlickItem *ngFor="let movie of recommendations|async" class="slide">
         <mat-card class="movie-card">
-          <img mat-card-image [src]="movie.poster" alt="Movie image">
+          <img mat-card-image *ngIf="movie.posterpath!=''" [src]="movie.posterpath" alt="Movie image">
+          <img mat-card-image *ngIf="movie.posterpath===''" style="background-color: black;">
           <div class="movie-info">
-            <mat-card-title>Movie title</mat-card-title>
-            <mat-card-subtitle>Movie subtitle</mat-card-subtitle>
-            <mat-card-subtitle>Movie subtitle</mat-card-subtitle>
-            <!-- <mat-card-content>
-              <p>Release Year</p>
-              <p>Rating</p>
-            </mat-card-content> -->
-            <!-- <mat-card-actions>
-              <button mat-button>Watch now</button>
-              <button mat-button>More info</button>
-            </mat-card-actions> -->
+            <mat-card-title style="text-align: center;">{{movie.title}}</mat-card-title>
+            <!-- <mat-card-subtitle>Movie subtitle</mat-card-subtitle> -->
+            <!-- <mat-card-subtitle>Movie subtitle</mat-card-subtitle> -->
           </div>
         </mat-card>
       </div>
     </ngx-slick-carousel>
   </div>
   <div class="container-fluid" style="padding-bottom: 30px;">
-    <h4 class="font-weight-light">Most Watched</h4>
+    <h4 class="font-weight-light" *ngIf="watchedByUser">Watched by you</h4>
     <ngx-slick-carousel #slickModal="slick-carousel" [config]="slideConfig">
-      <div ngxSlickItem *ngFor="let movie of movies2" class="slide">
+      <div ngxSlickItem *ngFor="let movie of watchedByUser | async" class="slide">
         <mat-card class="movie-card">
-          <img mat-card-image [src]="movie.poster" alt="Movie image">
+          <img mat-card-image *ngIf="movie.posterpath!=''" [src]="movie.posterpath" alt="Movie image">
+          <img mat-card-image *ngIf="movie.posterpath===''" style="background-color: black;">
           <div class="movie-info">
-            <mat-card-title>{{movie.title}}</mat-card-title>
-            <!-- <mat-card-subtitle>{{movie.title}}</mat-card-subtitle> -->
-            <!-- <mat-card-content>
-              <p>Some quick example text to build on the movie title.</p>
-            </mat-card-content> -->
-            <!-- <mat-card-actions>
-              <button mat-button>Watch now</button>
-              <button mat-button>More info</button>
-            </mat-card-actions> -->
+            <mat-card-title style="text-align: center;">{{movie.title}}</mat-card-title>
+          </div>
+        </mat-card>
+      </div>
+    </ngx-slick-carousel>
+  </div>
+  <div class="container-fluid" style="padding-bottom: 30px;" *ngIf="!watchedByUser">
+    <h4 class="font-weight-light" *ngIf="mostWatchedMovies">Most Watched</h4>
+    <ngx-slick-carousel #slickModal="slick-carousel" [config]="slideConfig">
+      <div ngxSlickItem *ngFor="let movie of mostWatchedMovies | async" class="slide">
+        <mat-card class="movie-card">
+          <img mat-card-image *ngIf="movie.posterpath!=''" [src]="movie.posterpath" alt="Movie image">
+          <img mat-card-image *ngIf="movie.posterpath===''" style="background-color: black;">
+          <div class="movie-info">
+            <mat-card-title style="text-align: center;">{{movie.title}}</mat-card-title>
           </div>
         </mat-card>
       </div>
     </ngx-slick-carousel>
   </div>
 </div>
-
+<ng-http-loader [backdrop]="false" [backgroundColor]="'#ff0000'" [debounceDelay]="100" [extraDuration]="300"
+  [minDuration]="300" opacity="0.6" [spinner]="spinnerStyle.skThreeBounce">
+</ng-http-loader>

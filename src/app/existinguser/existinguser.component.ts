@@ -1,19 +1,15 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit} from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { debounceTime, Observable, of } from 'rxjs';
+import { Spinkit } from 'ng-http-loader';
+import { combineLatest, debounceTime, forkJoin, Observable, of } from 'rxjs';
 import { MovieService } from '../movie.service';
+import { SpinnerVisibilityService } from 'ng-http-loader';
 
 interface Movie {
   title: string;
   poster: string;
   rating: number;
-}
-
-interface MovieInfo {
-  movie_id: string;
-  poster: string;
-  title: string;
 }
 
 @Component({
@@ -23,11 +19,11 @@ interface MovieInfo {
 })
 export class ExistinguserComponent implements OnInit {
   users$ = new Observable<any>();
-  // baseUrl = 'http://18.212.243.69:80';
   baseUrl = this.movieService.baseUrl;
-  moviesinfo:MovieInfo[];
-  movies: Movie[] = [];
-  movies2: Movie[] = [];
+  moviesinfo:Movie[];
+  recommendations:Observable<any>;
+  mostWatchedMovies:Observable<any>;
+  watchedByUser:Observable<any>;
 
   suggestions: any;
   slideConfig = {
@@ -39,6 +35,34 @@ export class ExistinguserComponent implements OnInit {
     autoplaySpeed: 3000,
     arrows: true,
     responsive: [
+      {
+        breakpoint: 3560,
+        settings: {
+          slidesToShow: 14,
+          slidesToScroll: 1
+        }
+      },
+      {
+        breakpoint: 1700,
+        settings: {
+          slidesToShow: 9,
+          slidesToScroll: 1
+        }
+      },
+      {
+        breakpoint: 1600,
+        settings: {
+          slidesToShow: 9,
+          slidesToScroll: 1
+        }
+      },
+      {
+        breakpoint: 1500,
+        settings: {
+          slidesToShow: 8,
+          slidesToScroll: 1
+        }
+      },
       {
         breakpoint: 1200,
         settings: {
@@ -70,35 +94,61 @@ export class ExistinguserComponent implements OnInit {
     ]
   };
   form: FormGroup;
-  recommendationTypes: string[] = ["Top Rated", "Top Rated By Genre", "Similar Movie"];
+  recommendationTypes: string[] = [
+    "Similar Movie", 
+    "Collaborative Filtering", 
+    "Collab Filter NN"
+  ];
   filteredItems: string[] = [];
+  spinnerStyle = Spinkit;
 
   constructor(
     private fb: FormBuilder,
     private http: HttpClient,
-    private movieService: MovieService
+    private movieService: MovieService,
+    private spinner: SpinnerVisibilityService
   ) { }
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      userid:[null, Validators.required, Validators.min, Validators.max, Validators.maxLength],
+      userid:[null,[Validators.required, Validators.min, Validators.max, Validators.maxLength]],
       recommendationtype: ['', Validators.required],
-      moviename: ['', Validators.required]
+      moviename: ['', Validators.required],
+      numberofrecommendations: [20, Validators.required]
     });
-    this.getSampleMessage();
-    // this.getUsers();
-    this.getMoviesInfo()
+    this.getMoviesInfo();
     this.form.get('moviename')?.valueChanges.pipe(
-      debounceTime(1000) // wait 300ms after each keystroke
+      debounceTime(1000)
     ).subscribe(value => {
       this.search(value);
+    });
+    this.getMostWatchedMovies();
+    this.form.get('recommendationtype')?.valueChanges.subscribe(value=>{
+      if(value !== 'Similar Movie') {
+        this.form.get('moviename')?.clearValidators();
+        this.form.get('moviename')?.reset();
+        this.form.get('moviename')?.setErrors(null)
+        this.form.get('moviename')?.updateValueAndValidity();
+      } else {
+        this.form.get('moviename')?.setValidators([Validators.required]);
+        this.form.get('moviename')?.updateValueAndValidity();
+      }
+      if (value !== 'Collaborative Filtering' && value !== 'Collab Filter NN') {
+        this.form.get('userid')?.clearValidators();
+        this.form.get('userid')?.reset();
+        this.form.get('userid')?.setErrors(null)
+        this.form.get('userid')?.updateValueAndValidity();
+      } else {
+        this.form.get('userid')?.setValidators([Validators.required]);
+        this.form.get('userid')?.updateValueAndValidity();
+      }
     });
   }
 
 
   search(keyword: string) {
     if (keyword !== '') {
-      this.suggestions = this.moviesinfo.filter(s => s.title.toLowerCase().includes(keyword.toLowerCase()));
+      this.suggestions = this.moviesinfo.filter(s => s.title.toLowerCase().includes(keyword?.toLowerCase()));
     }
   }
 
@@ -108,27 +158,49 @@ export class ExistinguserComponent implements OnInit {
     this.filteredItems = [];
   }
 
-  getSampleMessage() {
-    this.http.get(this.baseUrl).subscribe((data: any) => {
-      console.log(data);
-      console.log("sample data above")
-    })
-  }
-
-  getUsers() {
-    this.http.get(this.baseUrl + '/getUsers').subscribe((data: any) => {
-      this.users$ = of(data.users)
-      console.log(data.users);
-    });
-  }
-
   getMoviesInfo() {
     this.http.get(this.baseUrl + '/getMoviesInfo').subscribe((data: any) => {
       this.moviesinfo = data.moviesinfo
-      console.log(data.moviesinfo);
-      this.movies=data.moviesinfo.slice(0,20)
-      this.movies2 = data.moviesinfo.slice(40,60)
     });
   }
+
+  getMostWatchedMovies() {
+    this.movieService.getMostWatched().subscribe(data=>{
+      this.mostWatchedMovies = of(data)
+    })
+  }
+
+  recommendMovies() {
+    const data = this.form.getRawValue();
+    this.spinner.show();
+    if (data.recommendationtype === 'Similar Movie') {
+      this.movieService.getSimilarMovies(data.moviename, data.numberofrecommendations).subscribe(data=>{
+        this.recommendations = of(data)
+        this.spinner.hide();
+      })
+    } else if (data.recommendationtype === 'Collaborative Filtering') {
+      // forkJoin([this.movieService.getMoviesByCollabFiltering(data.userid, data.numberofrecommendations), this.movieService.getMoviesWatchedByUser(data.userid)]).subscribe(data=>{
+      //   this.recommendations = of(data[0])
+      //   this.watchedByUser = of(data[1])
+      //   this.spinner.hide();
+      // });
+      this.movieService.getMoviesByCollabFiltering(data.userid, data.numberofrecommendations).subscribe(data=>{
+        this.recommendations = of(data)
+        this.spinner.hide();
+      });
+    } else if (data.recommendationtype === 'Collab Filter NN') {
+      this.movieService.getRecommendationsFromNN(data.userid, data.numberofrecommendations).subscribe(data=>{
+        this.recommendations = of(data)
+        this.spinner.hide();
+      });
+      // forkJoin([this.movieService.getRecommendationsFromNN(data.userid, data.numberofrecommendations), this.movieService.getMoviesWatchedByUser(data.userid)]).subscribe(data=>{
+      //   this.recommendations = of(data[0])
+      //   this.watchedByUser = of(data[1])
+      //   this.spinner.hide();
+      // });
+    }
+  }
+
+
 
 }
